@@ -5,12 +5,12 @@ import { Box } from "@mui/material";
 function AppLayout() {
 
     return (
-        <div className="">
+        <div>
             <NavBar />
-            <main className="py-4">
-                <div className="container">
+            <main>
+                <Box>
                     <Outlet />
-                </div>
+                </Box>
             </main>
             <Box sx={{ position: "absolute", bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "10px" }}>
                 <span className="text-muted">
