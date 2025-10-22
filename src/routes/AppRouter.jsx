@@ -1,12 +1,12 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
-const AppLayout     = lazy(() => import("../layout/AppLayout"));
-const HomePage      = lazy(() => import("../pages/home-page/HomePage"));
-const MovieDetails  = lazy(() => import("../pages/movie-details-page/MovieDetailsPage"));
+const AppLayout = lazy(() => import("../layout/AppLayout"));
+const HomePage = lazy(() => import("../pages/home-page/HomePage"));
+const MovieDetails = lazy(() => import("../pages/movie-details-page/MovieDetailsPage"));
 const FavoritesPage = lazy(() => import("../pages/favorites-page/FavoritesPage"));
-const SharedListPage    = lazy(() => import("../pages/shared-list-page/SharedListPage"));
-const NotFoundPage  = lazy(() => import("../pages/not-found-page/NotFoundPage"));
+const SharedListPage = lazy(() => import("../pages/shared-list-page/SharedListPage"));
+const NotFoundPage = lazy(() => import("../pages/not-found-page/NotFoundPage"));
 
 const withSuspense = (element) => (
   <Suspense fallback={<div className="p-6">Carregando…</div>}>{element}</Suspense>
