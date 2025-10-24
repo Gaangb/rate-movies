@@ -8,7 +8,6 @@ import {
     Chip,
     CircularProgress,
     Container,
-    Divider,
     Grid,
     IconButton,
     Paper,
@@ -18,51 +17,49 @@ import {
 } from "@mui/material";
 import PlayArrowRounded from "@mui/icons-material/PlayArrowRounded";
 import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
-import BookmarkBorder from "@mui/icons-material/BookmarkBorder";
 import { useParams } from "react-router-dom";
 import noPoster from "../../assets/Image-not-found.png";
 import { ActorItem } from "../../components/actor-item/ActorItem";
 
-const tmdbImg = (path, size = "w1280") =>
-    path ? `https://image.tmdb.org/t/p/${size}${path}` : noPoster;
-
-function ScorePill({ value }) {
-    return (
-        <Box
-            sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 1.25,
-                px: 1.25,
-                py: 0.5,
-                borderRadius: 999,
-                backgroundColor: "rgba(0,0,0,.35)",
-                color: "#fff",
-            }}
-        >
-            <Box sx={{ position: "relative", width: 36, height: 36 }}>
-                <CircularProgress variant="determinate" value={value} size={36} thickness={4} />
-                <Box
-                    sx={{
-                        position: "absolute",
-                        inset: 0,
-                        display: "grid",
-                        placeItems: "center",
-                        fontSize: 12,
-                        fontWeight: 700,
-                    }}
-                >
-                    {Math.round(value)}
-                </Box>
-            </Box>
-            <Typography variant="body2">Avaliação</Typography>
-        </Box>
-    );
-}
-
 function MovieDetailsPage() {
-    const { id } = useParams();
+    const tmdbImg = (path, size = "w1280") =>
+        path ? `https://image.tmdb.org/t/p/${size}${path}` : noPoster;
 
+    function ScorePill({ value }) {
+        return (
+            <Box
+                sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 1.25,
+                    px: 1.25,
+                    py: 0.5,
+                    borderRadius: 999,
+                    backgroundColor: "rgba(0,0,0,.35)",
+                    color: "#fff",
+                }}
+            >
+                <Box sx={{ position: "relative", width: 36, height: 36 }}>
+                    <CircularProgress variant="determinate" value={value} size={36} thickness={4} />
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            inset: 0,
+                            display: "grid",
+                            placeItems: "center",
+                            fontSize: 12,
+                            fontWeight: 700,
+                        }}
+                    >
+                        {Math.round(value)}
+                    </Box>
+                </Box>
+                <Typography variant="body2">Avaliação</Typography>
+            </Box>
+        );
+    }
+    const { id } = useParams();
+    
     /** MOCK:*/
     const movie = {
         id,
