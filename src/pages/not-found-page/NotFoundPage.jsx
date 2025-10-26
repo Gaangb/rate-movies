@@ -1,4 +1,4 @@
-import { Box, Container } from "@mui/material";
+import { Box, Container } from "@mui/material"
 
 function NotFoundPage() {
   return (
@@ -39,7 +39,7 @@ function NotFoundPage() {
         </Box>
       </Box>
     </Container>
-  );
+  )
 }
 
-export default NotFoundPage;
+export default NotFoundPage

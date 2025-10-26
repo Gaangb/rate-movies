@@ -1,23 +1,23 @@
-import * as React from 'react';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import Typography from '@mui/material/Typography';
-import CardActionArea from '@mui/material/CardActionArea';
+import * as React from 'react'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import CardMedia from '@mui/material/CardMedia'
+import Typography from '@mui/material/Typography'
+import CardActionArea from '@mui/material/CardActionArea'
 import noPoster from '../../assets/Image-not-found.png'
-import { useNavigate } from 'react-router-dom';
-import { Chip, IconButton, Skeleton, Tooltip } from '@mui/material';
-import { Box } from '@mui/system';
-import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
-import Favorite from "@mui/icons-material/Favorite";
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom'
+import { Chip, IconButton, Skeleton, Tooltip } from '@mui/material'
+import { Box } from '@mui/system'
+import FavoriteBorder from "@mui/icons-material/FavoriteBorder"
+import Favorite from "@mui/icons-material/Favorite"
+import { useState } from 'react'
 
 export default function MovieCard({ movie, isFavorite = false, onToggleFavorite, showFavoriteButton = true }) {
   const navigate = useNavigate()
   const tmdbImg = (path, size = "w300_and_h450") =>
     path ? `https://image.tmdb.org/t/p/${size}_bestv2/${path}` : `${noPoster}`
 
-  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false)
 
   function onCardClick() {
     navigate(`/movie/${movie.id}`)
@@ -28,7 +28,7 @@ export default function MovieCard({ movie, isFavorite = false, onToggleFavorite,
     onToggleFavorite?.(movie)
   }
 
-  const yearOf = (s) => s?.slice(0, 4) || "—";
+  const yearOf = (s) => s?.slice(0, 4) || "—"
 
   return (
     <Card
@@ -71,9 +71,9 @@ export default function MovieCard({ movie, isFavorite = false, onToggleFavorite,
           <CardMedia
             component="img"
             loading="lazy"
-            src={tmdbImg(movie.posterPath)}
+            src={tmdbImg(movie.poster_path)}
             sizes="(max-width: 600px) 50vw, (max-width: 1200px) 33vw, 25vw"
-            alt={movie.originalTitle || "Sem título"}
+            alt={movie.original_title || "Sem título"}
             onLoad={() => setImgLoaded(true)}
             sx={{
               width: "100%",
@@ -86,19 +86,19 @@ export default function MovieCard({ movie, isFavorite = false, onToggleFavorite,
           <Box sx={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 1 }}>
             <Chip
               size="small"
-              label={yearOf(movie.releaseDate)}
+              label={yearOf(movie.release_date)}
               sx={{ bgcolor: "rgba(0,0,0,.55)", color: "#fff" }}
             />
             <Chip
               size="small"
-              label={(movie.voteAverage ?? 0).toFixed(1)}
+              label={(movie.vote_average ?? 0).toFixed(1)}
               sx={{ bgcolor: "rgba(0,0,0,.55)", color: "#fff" }}
             />
           </Box>
         </Box>
 
         <CardContent sx={{ width: "100%", p: 1.5 }}>
-          <Tooltip title={movie.originalTitle || ""} placement="top" arrow>
+          <Tooltip title={movie.title || ""} placement="top" arrow>
             <Typography
               gutterBottom
               variant="subtitle1"
@@ -106,7 +106,7 @@ export default function MovieCard({ movie, isFavorite = false, onToggleFavorite,
               noWrap
               sx={{ mb: 0.5, cursor: "help" }}
             >
-              {movie.originalTitle || ""}
+              {movie.title || ""}
             </Typography>
           </Tooltip>
 
@@ -163,5 +163,5 @@ export default function MovieCard({ movie, isFavorite = false, onToggleFavorite,
         : null
       }
     </Card>
-  );
+  )
 }

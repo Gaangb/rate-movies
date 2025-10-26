@@ -1,7 +1,7 @@
-import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { Box, Container, Grid, Typography, Chip, CircularProgress } from "@mui/material";
-import MovieCard from "../../components/movie-card/movieCard";
+import { useParams } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { Box, Container, Grid, Typography, Chip, CircularProgress } from "@mui/material"
+import MovieCard from "../../components/movie-card/movieCard"
 
 // MOCK
 const mockLists = {
@@ -44,26 +44,26 @@ const mockLists = {
       },
     ],
   },
-};
+}
 
 function SharedListPage() {
-  const { slug } = useParams();
-  const [list, setList] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { slug } = useParams()
+  const [list, setList] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setTimeout(() => {
-      setList(mockLists[slug]);
-      setLoading(false);
-    }, 500);
-  }, [slug]);
+      setList(mockLists[slug])
+      setLoading(false)
+    }, 500)
+  }, [slug])
 
   if (loading)
     return (
       <Box sx={{ display: "grid", placeItems: "center", minHeight: "60vh" }}>
         <CircularProgress />
       </Box>
-    );
+    )
 
   if (!list)
     return (
@@ -75,7 +75,7 @@ function SharedListPage() {
           O link pode estar incorreto ou a lista foi removida.
         </Typography>
       </Container>
-    );
+    )
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -94,12 +94,12 @@ function SharedListPage() {
       <Grid container spacing={2}>
         {list.movies.map((movie) => (
           <Grid key={movie.id} item xs={12} sm={6} md={4} lg={3} xl={2}>
-            <MovieCard movie={movie} showFavoriteButton={false}/>
+            <MovieCard movie={movie} showFavoriteButton={false} />
           </Grid>
         ))}
       </Grid>
     </Container>
-  );
+  )
 }
 
-export default SharedListPage;
+export default SharedListPage
