@@ -10,7 +10,7 @@ import {
 import { useNavigate } from "react-router-dom"
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp"
 import apiMovies from "../../api/api"
-import MovieCard from "../../components/movie-card/movieCard"
+import MovieCard from "../../components/movie-card/MovieCard"
 
 const tmdbImg = (path, size = "w1280") =>
   path ? `https://image.tmdb.org/t/p/${size}${path}` : null

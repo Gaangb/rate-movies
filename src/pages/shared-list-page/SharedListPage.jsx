@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { Box, Container, Grid, Typography, Chip, CircularProgress } from "@mui/material"
-import MovieCard from "../../components/movie-card/movieCard"
+import MovieCard from "../../components/movie-card/MovieCard"
 
 // MOCK
 const mockLists = {

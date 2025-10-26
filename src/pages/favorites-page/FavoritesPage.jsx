@@ -13,7 +13,7 @@ import {
 } from "@mui/material"
 import ShareRoundedIcon from "@mui/icons-material/ShareRounded"
 import { useEffect, useState } from "react"
-import MovieCard from "../../components/movie-card/movieCard"
+import MovieCard from "../../components/movie-card/MovieCard"
 import apiMovies from "../../api/api"
 
 function FavoritesPage() {
