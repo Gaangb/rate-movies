@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   Box,
   Button,
@@ -6,37 +6,145 @@ import {
   Container,
   Grid,
   Typography,
-} from "@mui/material";
-import { useNavigate } from "react-router-dom";
-
-import { useMovies } from "../../hooks/useMovies";
-import MovieCard from "../../components/movie-card/movieCard";
+} from "@mui/material"
+import { useNavigate } from "react-router-dom"
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp"
+import apiMovies from "../../api/api"
+import MovieCard from "../../components/movie-card/movieCard"
 
 const tmdbImg = (path, size = "w1280") =>
-    path ? `https://image.tmdb.org/t/p/${size}${path}`: null
+  path ? `https://image.tmdb.org/t/p/${size}${path}` : null
 
-const yearOf = (s) => s?.slice(0, 4) || "";
+const yearOf = (s) => s?.slice(0, 4) || ""
 
 function HomePage() {
-  const { movies } = useMovies();
-  const [favorites, setFavorites] = useState(() => new Set());
-  const navigate = useNavigate();
+  const [movies, setMovies] = useState([])
+  const [movieIds, setMovieIds] = useState(new Set())
+  const [favorites, setFavorites] = useState(() => new Set())
+  const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [showScrollTop, setShowScrollTop] = useState(false)
+  const navigate = useNavigate()
 
-  const toggleFavorite = (m) => {
+  const loaderRef = useRef(null)
+  const loadingRef = useRef(false)
+
+  const toggleFavorite = async (movie) => {
     setFavorites((prev) => {
-      const next = new Set(prev);
-      next.has(m.id) ? next.delete(m.id) : next.add(m.id);
-      return next;
-    });
-  };
+      const next = new Set(prev)
+      if (next.has(movie.id)) {
+        next.delete(movie.id)
+        handleFavoriteApi(movie, false)
+      } else {
+        next.add(movie.id)
+        handleFavoriteApi(movie, true)
+      }
+      return next
+    })
+  }
+
+  const fetchMovies = async (pageNum = 1) => {
+    if (loadingRef.current) return
+    loadingRef.current = true
+    setLoading(true)
+
+    try {
+      const response = await apiMovies.get(`discover/?page=${pageNum}&account_id=${import.meta.env.VITE_API_ACCOUNT_ID}`)
+      const newMovies = response.data.results || []
+
+      if (newMovies.length === 0) {
+        setHasMore(false)
+      } else {
+        setMovies((prev) => {
+          const filtered = newMovies.filter((m) => !movieIds.has(m.id))
+          const updatedIds = new Set([...movieIds, ...filtered.map((m) => m.id)])
+          setMovieIds(updatedIds)
+
+          setFavorites((prevFavs) => {
+            const updatedFavs = new Set(prevFavs)
+            filtered.forEach((m) => {
+              if (m.favorite) updatedFavs.add(m.id)
+            })
+            return updatedFavs
+          })
+
+          return [...prev, ...filtered]
+        })
+      }
+    } catch (error) {
+      console.error("Erro ao buscar filmes:", error)
+    } finally {
+      loadingRef.current = false
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchMovies(1)
+  }, [])
+
+  useEffect(() => {
+    if (loading || !hasMore) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0]
+        if (first.isIntersecting && !loadingRef.current) {
+          setPage((prev) => prev + 1)
+        }
+      },
+      { threshold: 1.0 }
+    )
+
+    const currentLoader = loaderRef.current
+    if (currentLoader) observer.observe(currentLoader)
+
+    return () => {
+      if (currentLoader) observer.unobserve(currentLoader)
+    }
+  }, [loading, hasMore])
+
+  useEffect(() => {
+    if (page > 1) fetchMovies(page)
+  }, [page])
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop
+      setShowScrollTop(scrollY > 600)
+    }
+
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handleFavoriteApi = async (movie, isFav) => {
+    try {
+      const payload = {
+        account_id: import.meta.env.VITE_API_ACCOUNT_ID,
+        movie_id: movie.id,
+        favorite: isFav,
+        media_type: "movie",
+      }
+      await apiMovies.post("/favorites/", payload)
+    } catch (error) {
+      console.error("Erro ao atualizar favorito:", error)
+    }
+  }
 
   const featured = useMemo(() => {
-    if (!movies?.length) return null;
+    if (!movies?.length) return null
     return movies.reduce(
-      (acc, cur) => ((cur.popularity ?? 0) > (acc?.popularity ?? -1) ? cur : acc),
+      (acc, cur) =>
+        (cur.popularity ?? 0) > (acc?.popularity ?? -1) ? cur : acc,
       movies[0]
-    );
-  }, [movies]);
+    )
+  }, [movies])
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -62,7 +170,7 @@ function HomePage() {
               backgroundPosition: "center",
               transform: "scale(1.06)",
               backgroundRepeat: "no-repeat",
-              bgcolor: "transparent"
+              bgcolor: "transparent",
             }}
           />
           <Box
@@ -139,11 +247,19 @@ function HomePage() {
           {movies?.length || 0} resultados
         </Typography>
       </Box>
-      
+
       <Grid container spacing={2} p={{ xs: 2, md: 0 }}>
-        {movies ? (
-          movies.map((movie) => (
-            <Grid key={movie.id} size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2 }}>
+        {movies.length ? (
+          movies.map((movie, index) => (
+            <Grid
+              key={`${movie.id}-${index}`}
+              item
+              xs={12}
+              sm={6}
+              md={4}
+              lg={3}
+              xl={2}
+            >
               <MovieCard
                 movie={movie}
                 isFavorite={favorites.has(movie.id)}
@@ -155,8 +271,61 @@ function HomePage() {
           <Typography sx={{ p: 2 }}>Nenhum filme encontrado</Typography>
         )}
       </Grid>
+
+      {hasMore && !loading && (
+        <div
+          ref={loaderRef}
+          style={{ height: "60px", margin: "40px 0", textAlign: "center" }}
+        >
+          <Typography color="text.secondary">Carregando mais...</Typography>
+        </div>
+      )}
+
+      {loading && (
+        <Typography
+          sx={{ textAlign: "center", py: 2 }}
+          color="text.secondary"
+        >
+          Carregando filmes...
+        </Typography>
+      )}
+
+      {!hasMore && (
+        <Typography
+          sx={{ textAlign: "center", py: 2 }}
+          color="text.secondary"
+        >
+          Você chegou ao fim da lista 🍿
+        </Typography>
+      )}
+
+      {showScrollTop && (
+        <Box
+          sx={{
+            position: "fixed",
+            bottom: 32,
+            right: 32,
+            zIndex: 1000,
+          }}
+        >
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={scrollToTop}
+            sx={{
+              borderRadius: "50%",
+              minWidth: 0,
+              width: 48,
+              height: 48,
+              boxShadow: 4,
+            }}
+          >
+            <KeyboardArrowUpIcon />
+          </Button>
+        </Box>
+      )}
     </Container>
-  );
+  )
 }
 
-export default HomePage;
+export default HomePage

@@ -1,118 +1,212 @@
-import { Box, Container, Typography, Grid } from "@mui/material";
+import {
+  Box,
+  Button,
+  Container,
+  Typography,
+  Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  CircularProgress,
+} from "@mui/material"
+import ShareRoundedIcon from "@mui/icons-material/ShareRounded"
 import { useEffect, useState } from "react"
-import MovieCard from "../../components/movie-card/movieCard";
+import MovieCard from "../../components/movie-card/movieCard"
+import apiMovies from "../../api/api"
 
 function FavoritesPage() {
-    const [movies, setMovies] = useState([])
-    const [favorites, setFavorites] = useState(() => new Set());
+  const [movies, setMovies] = useState([])
+  const [favorites, setFavorites] = useState(() => new Set())
+  const [openDialog, setOpenDialog] = useState(false)
+  const [listName, setListName] = useState("")
+  const [loading, setLoading] = useState(false)
 
-    useEffect(() => {
-        setMovies([
-            {
-                id: "1",
-                originalTitle: "Lilo & Stitch",
-                title: "Lilo & Stitch",
-                overview:
-                    'Conta a história de uma garota havaiana solitária, Lilo, que adota um "cachorro" azul chamado Stitch, sem saber que ele é um experimento alienígena que escapou de outro planeta.',
-                posterPath: "/cm8TNGBGG0aBfWj0LgrESHv8tir.jpg",
-                backdrop_path: "/8YFL5QQVPy3AgrEQxNYVSgiPEbe.jpg",
-                originalLanguage: "pt-BR",
-                releaseDate: "2023-03-08",
-                genres: [
-                    { id: 16, name: "Animação" },
-                    { id: 10751, name: "Família" },
-                    { id: 35, name: "Comédia" },
-                ],
-                voteAverage: 6.5,
-                voteCount: 1287,
-                popularity: 324.7,
-                adult: false,
-            },
-            {
-                id: "2",
-                originalTitle: "Spider-Man: Across the Spider-Verse",
-                title: "Homem-Aranha: Através do Aranhaverso",
-                overview:
-                    "Miles Morales retorna para uma nova aventura através do multiverso, unindo forças com Gwen Stacy e uma nova equipe de Pessoas-Aranha.",
-                posterPath: "/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg",
-                backdrop_path: "/8YFL5QQVPy3AgrEQxNYVSgiPEbe.jpg",
-                originalLanguage: "en",
-                releaseDate: "2023-06-02",
-                genres: [
-                    { id: 28, name: "Ação" },
-                    { id: 16, name: "Animação" },
-                    { id: 12, name: "Aventura" },
-                ],
-                voteAverage: 8.4,
-                voteCount: 9800,
-                popularity: 915.3,
-                adult: false,
-            },
-            {
-                id: "5",
-                originalTitle: "The Super Mario Bros. Movie",
-                title: "Super Mario Bros. O Filme",
-                overview:
-                    "Mario e Luigi viajam por um reino mágico para salvar a Princesa Peach de Bowser.",
-                posterPath: "/qNBAXBIQlnOThrVvA6mA2B5ggV6.jpg",
-                backdrop_path: "/8YFL5QQVPy3AgrEQxNYVSgiPEbe.jpg",
-                originalLanguage: "en",
-                releaseDate: "2023-04-05",
-                genres: [
-                    { id: 16, name: "Animação" },
-                    { id: 10751, name: "Família" },
-                    { id: 12, name: "Aventura" },
-                ],
-                voteAverage: 7.7,
-                voteCount: 12000,
-                popularity: 590.1,
-                adult: false,
-            }
-        ])
-    }, [])
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        setLoading(true)
+        const accountId = import.meta.env.VITE_API_ACCOUNT_ID
+        const response = await apiMovies.get(`/favorites/`, {
+          params: { account_id: accountId },
+        })
 
-    const toggleFavorite = (m) => {
-        setFavorites((prev) => {
-            const next = new Set(prev);
-            next.has(m.id) ? next.delete(m.id) : next.add(m.id);
-            return next;
-        });
-    };
+        const results = response.data.results || []
+        setMovies(results)
 
-    return (
-        <Container maxWidth="xl" sx={{ py: 3 }}>
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "baseline",
-                    justifyContent: "space-between",
-                    mb: 1.5,
-                    px: { xs: 2, md: 0 },
-                }}
+        const favSet = new Set(results.map((m) => m.id))
+        setFavorites(favSet)
+      } catch (error) {
+        console.error("Erro ao buscar filmes favoritos:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchFavorites()
+  }, [])
+
+  const toggleFavorite = async (movie) => {
+    try {
+      const accountId = import.meta.env.VITE_API_ACCOUNT_ID
+      const isFav = favorites.has(movie.id)
+
+      await apiMovies.post(`/favorites/`, {
+        account_id: accountId,
+        movie_id: movie.id,
+        favorite: !isFav,
+        media_type: "movie",
+      })
+
+      setFavorites((prev) => {
+        const next = new Set(prev)
+        if (isFav) next.delete(movie.id)
+        else next.add(movie.id)
+        return next
+      })
+
+      if (isFav) {
+        setMovies((prev) => prev.filter((m) => m.id !== movie.id))
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar favorito:", error)
+    }
+  }
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `Lista "${listName}" - RateMovies`,
+      text: "Confira minha lista de filmes favoritos!",
+      url: window.location.href,
+    }
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+      } else {
+        await navigator.clipboard.writeText(shareData.url)
+        alert(`Link da lista "${listName}" copiado para a área de transferência!`)
+      }
+      setOpenDialog(false)
+      setListName("")
+    } catch (err) {
+      console.error("Erro ao compartilhar:", err)
+    }
+  }
+
+  return (
+    <Container maxWidth="xl" sx={{ py: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          mb: 0.5,
+          px: { xs: 2, md: 0 },
+        }}
+      >
+        <Typography variant="h6" fontWeight="bold">
+          Favoritos
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {movies?.length || 0} resultado{movies?.length > 1 ? "s" : ""}
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          mb: 2.5,
+          px: { xs: 2, md: 0 },
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<ShareRoundedIcon />}
+          onClick={() => setOpenDialog(true)}
+        >
+          Compartilhar lista
+        </Button>
+      </Box>
+
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Compartilhar lista</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Dê um nome para sua lista antes de compartilhar:
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Nome da lista"
+            variant="outlined"
+            value={listName}
+            onChange={(e) => setListName(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setOpenDialog(false)}>Cancelar</Button>
+          <Button
+            onClick={handleShare}
+            variant="contained"
+            disabled={!listName.trim()}
+          >
+            Compartilhar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {loading ? (
+        <Box
+          sx={{
+            display: "grid",
+            placeItems: "center",
+            minHeight: "50vh",
+          }}
+        >
+          <CircularProgress />
+          <Typography color="text.secondary" sx={{ mt: 2 }}>
+            Carregando favoritos...
+          </Typography>
+        </Box>
+      ) : movies.length > 0 ? (
+        <Grid container spacing={2} p={{ xs: 2, md: 0 }}>
+          {movies.map((movie) => (
+            <Grid
+              key={movie.id}
+              item
+              xs={12}
+              sm={6}
+              md={4}
+              lg={3}
+              xl={2}
             >
-                <Typography variant="h6">Favoritos</Typography>
-                <Typography variant="body2" color="text.secondary">
-                    {movies?.length || 0} resultados
-                </Typography>
-            </Box>
-
-            <Grid container spacing={2} p={{ xs: 2, md: 0 }}>
-                {movies ? (
-                    movies.map((movie) => (
-                        <Grid key={movie.id} size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2 }}>
-                            <MovieCard
-                                movie={movie}
-                                isFavorite={favorites.has(movie.id)}
-                                onToggleFavorite={toggleFavorite}
-                            />
-                        </Grid>
-                    ))
-                ) : (
-                    <Typography sx={{ p: 2 }}>Nenhum filme encontrado</Typography>
-                )}
+              <MovieCard
+                movie={movie}
+                isFavorite={favorites.has(movie.id)}
+                onToggleFavorite={toggleFavorite}
+              />
             </Grid>
-        </Container>
-    )
+          ))}
+        </Grid>
+      ) : (
+        <Box
+          sx={{
+            display: "grid",
+            placeItems: "center",
+            minHeight: "50vh",
+          }}
+        >
+          <Typography color="text.secondary">
+            Nenhum filme favoritado ainda 😢
+          </Typography>
+        </Box>
+      )}
+    </Container>
+  )
 }
 
 export default FavoritesPage
