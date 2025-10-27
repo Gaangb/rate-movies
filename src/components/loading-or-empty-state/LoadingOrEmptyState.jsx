@@ -34,7 +34,11 @@ function LoadingOrEmptyState({
           color: 'text.secondary',
         }}
       >
-        <Typography>{emptyMessage}</Typography>
+        {typeof emptyMessage === 'string' ? (
+          <Typography>{emptyMessage}</Typography>
+        ) : (
+          emptyMessage
+        )}
       </Box>
     )
   }

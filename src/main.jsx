@@ -4,9 +4,16 @@ import './index.css'
 import App from './App.jsx'
 import './scss/styles.scss'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+import { SnackbarProvider } from 'notistack'
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+  <SnackbarProvider
+    maxSnack={3}
+    anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+    autoHideDuration={3000}
+  >
+    <StrictMode>
+      <App />
+    </StrictMode>
+  </SnackbarProvider>,
 )

@@ -23,6 +23,7 @@ import { ActorItem } from '../../components/actor-item/ActorItem'
 import { useEffect, useState } from 'react'
 import apiMovies from '../../api/api'
 import LoadingOrEmptyState from '../../components/loading-or-empty-state/LoadingOrEmptyState'
+import { useSnackbar } from 'notistack'
 
 function MovieDetailsPage() {
   const tmdbImg = (path, size = 'w1280') =>
@@ -30,6 +31,7 @@ function MovieDetailsPage() {
 
   const [loading, setLoading] = useState(false)
   const [movie, setMovie] = useState(null)
+  const { enqueueSnackbar } = useSnackbar()
 
   function ScorePill({ value }) {
     return (
@@ -78,8 +80,10 @@ function MovieDetailsPage() {
         const response = await apiMovies.get(`movies/${id}`)
 
         setMovie(response.data)
-      } catch (error) {
-        console.error('Erro ao buscar filme:', error)
+      } catch (err) {
+        enqueueSnackbar(`Erro ao buscar filmes ${err}`, {
+          variant: 'error',
+        })
       } finally {
         setLoading(false)
       }

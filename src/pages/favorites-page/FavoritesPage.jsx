@@ -9,13 +9,13 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  CircularProgress,
 } from '@mui/material'
 import ShareRoundedIcon from '@mui/icons-material/ShareRounded'
 import { useEffect, useState } from 'react'
 import MovieCard from '../../components/movie-card/MovieCard'
 import apiMovies from '../../api/api'
 import LoadingOrEmptyState from '../../components/loading-or-empty-state/LoadingOrEmptyState'
+import { useSnackbar } from 'notistack'
 
 function FavoritesPage() {
   const [movies, setMovies] = useState([])
@@ -25,6 +25,7 @@ function FavoritesPage() {
   const [nameError, setNameError] = useState('')
   const [loading, setLoading] = useState(false)
   const [sharing, setSharing] = useState(false)
+  const { enqueueSnackbar } = useSnackbar()
 
   const accountId = import.meta.env.VITE_API_ACCOUNT_ID
 
@@ -36,11 +37,12 @@ function FavoritesPage() {
           params: { account_id: accountId },
         })
         const results = data?.results ?? []
-        console.log(data?.list_name)
         setMovies(results)
         setFavorites(new Set(results.map((m) => m.id)))
-      } catch (error) {
-        console.error('Erro ao buscar filmes favoritos:', error)
+      } catch (err) {
+        enqueueSnackbar(`Erro ao buscar filmes ${err}`, {
+          variant: 'error',
+        })
       } finally {
         setLoading(false)
       }
@@ -67,8 +69,10 @@ function FavoritesPage() {
       })
 
       if (isFav) setMovies((prev) => prev.filter((m) => m.id !== movie.id))
-    } catch (error) {
-      console.error('Erro ao atualizar favorito:', error)
+    } catch (err) {
+      enqueueSnackbar(`Erro ao atualizar favorito ${err}`, {
+        variant: 'error',
+      })
     }
   }
 
@@ -92,42 +96,35 @@ function FavoritesPage() {
   }
 
   const handleShare = async () => {
-    const movieIds = movies.filter((m) => favorites.has(m.id)).map((m) => m.id)
-
-    if (!movieIds.length) {
-      alert('Você não possui filmes favoritados para compartilhar.')
-      return
-    }
     if (nameError || !listName.trim()) return
 
     const sanitized = listName.trim().replace(/\s+/g, '-')
 
     try {
       setSharing(true)
-      const { data } = await apiMovies.post('/share-list/', {
+
+      await apiMovies.post('/share-favorites/', {
         account_id: Number(accountId),
         list_name: sanitized,
-        movie_ids: movieIds,
       })
 
-      const slug = data?.slug || accountId
-      const shareUrl = `${window.location.origin}/list/${slug}`
+      const sharePath = `/list/${sanitized}`
+      const shareUrl = `${window.location.origin}${sharePath}`
 
-      if (navigator.share) {
-        await navigator.share({
-          title: `Lista "${sanitized}" - RateMovies`,
-          text: 'Confira minha lista de filmes favoritos!',
-          url: shareUrl,
-        })
-      } else {
-        await navigator.clipboard.writeText(shareUrl)
-        alert(`Link copiado!\n${shareUrl}`)
-      }
+      await navigator.clipboard.writeText(shareUrl)
+
+      enqueueSnackbar('Link copiado para a área de transferência!', {
+        variant: 'success',
+      })
 
       handleCloseShare()
     } catch (err) {
-      console.error('Erro ao criar lista compartilhável:', err)
-      alert('Não foi possível gerar a lista. Tente novamente.')
+      enqueueSnackbar(
+        `Não foi possível gerar a lista. Tente novamente. ${err}`,
+        {
+          variant: 'error',
+        },
+      )
     } finally {
       setSharing(false)
     }

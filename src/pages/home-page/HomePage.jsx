@@ -5,6 +5,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import apiMovies from '../../api/api'
 import MovieCard from '../../components/movie-card/MovieCard'
 import LoadingOrEmptyState from '../../components/loading-or-empty-state/LoadingOrEmptyState'
+import { useSnackbar } from 'notistack'
 
 const tmdbImg = (path, size = 'w1280') =>
   path ? `https://image.tmdb.org/t/p/${size}${path}` : null
@@ -26,6 +27,8 @@ function HomePage() {
   const pendingFav = useRef(new Set())
   const loaderRef = useRef(null)
   const loadingRef = useRef(false)
+
+  const { enqueueSnackbar } = useSnackbar()
 
   const toggleFavorite = (movie) => {
     const willFavorite = !favorites.has(movie.id)
@@ -90,8 +93,10 @@ function HomePage() {
           return [...prev, ...filtered]
         })
       }
-    } catch (error) {
-      console.error('Erro ao buscar filmes:', error)
+    } catch (err) {
+      enqueueSnackbar(`Erro ao buscar filmes ${err}`, {
+        variant: 'error',
+      })
       setHasMore(false)
     } finally {
       loadingRef.current = false
@@ -161,8 +166,10 @@ function HomePage() {
       }
 
       await apiMovies.post('/favorites/', payload)
-    } catch (error) {
-      console.error('Erro ao atualizar favorito:', error)
+    } catch (err) {
+      enqueueSnackbar(`Erro ao atualizar favorito ${err}`, {
+        variant: 'error',
+      })
     }
   }
 
