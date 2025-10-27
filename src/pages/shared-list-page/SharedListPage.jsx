@@ -1,45 +1,52 @@
-import { useParams } from "react-router-dom"
-import { useEffect, useState } from "react"
-import { Box, Container, Grid, Typography, Chip, CircularProgress } from "@mui/material"
-import MovieCard from "../../components/movie-card/MovieCard"
+import { useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import {
+  Box,
+  Container,
+  Grid,
+  Typography,
+  Chip,
+  CircularProgress,
+} from '@mui/material'
+import MovieCard from '../../components/movie-card/MovieCard'
 
 // MOCK
 const mockLists = {
-  "melhores-2024": {
-    title: "Izzana Martins",
-    genres: ["Ação", "Drama", "Aventura"],
+  'melhores-2024': {
+    title: 'Izzana Martins',
+    genres: ['Ação', 'Drama', 'Aventura'],
     movies: [
       {
-        id: "1",
-        title: "Duna: Parte Dois",
-        originalTitle: "Dune: Part Two",
+        id: '1',
+        title: 'Duna: Parte Dois',
+        originalTitle: 'Dune: Part Two',
         overview:
-          "Paul Atreides une forças com os Fremen para vingar sua família e salvar Arrakis.",
-        posterPath: "/8bcoRX3hQRHufLPSDREdvr3YMXx.jpg",
+          'Paul Atreides une forças com os Fremen para vingar sua família e salvar Arrakis.',
+        posterPath: '/8bcoRX3hQRHufLPSDREdvr3YMXx.jpg',
         voteAverage: 8.6,
       },
       {
-        id: "2",
-        title: "Oppenheimer",
-        originalTitle: "Oppenheimer",
+        id: '2',
+        title: 'Oppenheimer',
+        originalTitle: 'Oppenheimer',
         overview:
-          "A biografia do físico J. Robert Oppenheimer e seu papel na criação da bomba atômica.",
-        posterPath: "/ptpr0kGAckfQkJeJIt8st5dglvd.jpg",
+          'A biografia do físico J. Robert Oppenheimer e seu papel na criação da bomba atômica.',
+        posterPath: '/ptpr0kGAckfQkJeJIt8st5dglvd.jpg',
         voteAverage: 8.5,
       },
     ],
   },
-  "teste": {
-    title: "Izzana Barbosa",
-    genres: ["Animação", "Família", "Fantasia"],
+  teste: {
+    title: 'Izzana Barbosa',
+    genres: ['Animação', 'Família', 'Fantasia'],
     movies: [
       {
-        id: "3",
-        title: "Elementos",
-        originalTitle: "Elemental",
+        id: '3',
+        title: 'Elementos',
+        originalTitle: 'Elemental',
         overview:
-          "Ember e Wade vivem em uma cidade onde os habitantes dos quatro elementos convivem.",
-        posterPath: "/hj6mDaxW5k7k1fOShv9tF5vNfiO.jpg",
+          'Ember e Wade vivem em uma cidade onde os habitantes dos quatro elementos convivem.',
+        posterPath: '/hj6mDaxW5k7k1fOShv9tF5vNfiO.jpg',
         voteAverage: 7.3,
       },
     ],
@@ -60,14 +67,14 @@ function SharedListPage() {
 
   if (loading)
     return (
-      <Box sx={{ display: "grid", placeItems: "center", minHeight: "60vh" }}>
+      <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
         <CircularProgress />
       </Box>
     )
 
   if (!list)
     return (
-      <Container maxWidth="md" sx={{ py: 8, textAlign: "center" }}>
+      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
         <Typography variant="h5" fontWeight={700} gutterBottom>
           Lista não encontrada
         </Typography>
@@ -84,7 +91,7 @@ function SharedListPage() {
           {list.title}
         </Typography>
 
-        <Box sx={{ mt: 1.5, display: "flex", gap: 1, flexWrap: "wrap" }}>
+        <Box sx={{ mt: 1.5, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           {list.genres.map((g) => (
             <Chip key={g} label={g} size="small" variant="outlined" />
           ))}

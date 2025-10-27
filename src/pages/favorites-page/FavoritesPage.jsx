@@ -10,137 +10,137 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
-} from "@mui/material";
-import ShareRoundedIcon from "@mui/icons-material/ShareRounded";
-import { useEffect, useState } from "react";
-import MovieCard from "../../components/movie-card/MovieCard";
-import apiMovies from "../../api/api";
+} from '@mui/material'
+import ShareRoundedIcon from '@mui/icons-material/ShareRounded'
+import { useEffect, useState } from 'react'
+import MovieCard from '../../components/movie-card/MovieCard'
+import apiMovies from '../../api/api'
 
 function FavoritesPage() {
-  const [movies, setMovies] = useState([]);
-  const [favorites, setFavorites] = useState(() => new Set());
-  const [openDialog, setOpenDialog] = useState(false);
-  const [listName, setListName] = useState("");
-  const [nameError, setNameError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [sharing, setSharing] = useState(false);
+  const [movies, setMovies] = useState([])
+  const [favorites, setFavorites] = useState(() => new Set())
+  const [openDialog, setOpenDialog] = useState(false)
+  const [listName, setListName] = useState('')
+  const [nameError, setNameError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [sharing, setSharing] = useState(false)
 
-  const accountId = import.meta.env.VITE_API_ACCOUNT_ID;
+  const accountId = import.meta.env.VITE_API_ACCOUNT_ID
 
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        setLoading(true);
-        const { data } = await apiMovies.get("/favorites/", {
+        setLoading(true)
+        const { data } = await apiMovies.get('/favorites/', {
           params: { account_id: accountId },
-        });
-        const results = data?.results ?? [];
+        })
+        const results = data?.results ?? []
         console.log(data?.list_name)
-        setMovies(results);
-        setFavorites(new Set(results.map((m) => m.id)));
+        setMovies(results)
+        setFavorites(new Set(results.map((m) => m.id)))
       } catch (error) {
-        console.error("Erro ao buscar filmes favoritos:", error);
+        console.error('Erro ao buscar filmes favoritos:', error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchFavorites();
-  }, [accountId]);
+    }
+    fetchFavorites()
+  }, [accountId])
 
   const toggleFavorite = async (movie) => {
     try {
-      const isFav = favorites.has(movie.id);
+      const isFav = favorites.has(movie.id)
 
-      await apiMovies.post("/favorites/", {
+      await apiMovies.post('/favorites/', {
         account_id: accountId,
         movie_id: movie.id,
         favorite: !isFav,
-        media_type: "movie",
-      });
+        media_type: 'movie',
+      })
 
       setFavorites((prev) => {
-        const next = new Set(prev);
-        if (isFav) next.delete(movie.id);
-        else next.add(movie.id);
-        return next;
-      });
+        const next = new Set(prev)
+        if (isFav) next.delete(movie.id)
+        else next.add(movie.id)
+        return next
+      })
 
-      if (isFav) setMovies((prev) => prev.filter((m) => m.id !== movie.id));
+      if (isFav) setMovies((prev) => prev.filter((m) => m.id !== movie.id))
     } catch (error) {
-      console.error("Erro ao atualizar favorito:", error);
+      console.error('Erro ao atualizar favorito:', error)
     }
-  };
+  }
 
-  const handleOpenShare = () => setOpenDialog(true);
+  const handleOpenShare = () => setOpenDialog(true)
   const handleCloseShare = () => {
-    setOpenDialog(false);
-    setListName("");
-    setNameError("");
-  };
+    setOpenDialog(false)
+    setListName('')
+    setNameError('')
+  }
 
   const onNameChange = (e) => {
-    const value = e.target.value;
-    setListName(value);
+    const value = e.target.value
+    setListName(value)
     if (/\s/.test(value)) {
-      setNameError("Use apenas letras/números/-, sem espaços.");
+      setNameError('Use apenas letras/números/-, sem espaços.')
     } else if (!value.trim()) {
-      setNameError("Informe um nome.");
+      setNameError('Informe um nome.')
     } else {
-      setNameError("");
+      setNameError('')
     }
-  };
+  }
 
   const handleShare = async () => {
-    const movieIds = movies.filter((m) => favorites.has(m.id)).map((m) => m.id);
+    const movieIds = movies.filter((m) => favorites.has(m.id)).map((m) => m.id)
 
     if (!movieIds.length) {
-      alert("Você não possui filmes favoritados para compartilhar.");
-      return;
+      alert('Você não possui filmes favoritados para compartilhar.')
+      return
     }
-    if (nameError || !listName.trim()) return;
+    if (nameError || !listName.trim()) return
 
-    const sanitized = listName.trim().replace(/\s+/g, "-")
+    const sanitized = listName.trim().replace(/\s+/g, '-')
 
     try {
-      setSharing(true);
-      const { data } = await apiMovies.post("/share-list/", {
+      setSharing(true)
+      const { data } = await apiMovies.post('/share-list/', {
         account_id: Number(accountId),
         list_name: sanitized,
         movie_ids: movieIds,
-      });
+      })
 
-      const slug = data?.slug || accountId;
-      const shareUrl = `${window.location.origin}/list/${slug}`;
+      const slug = data?.slug || accountId
+      const shareUrl = `${window.location.origin}/list/${slug}`
 
       if (navigator.share) {
         await navigator.share({
           title: `Lista "${sanitized}" - RateMovies`,
-          text: "Confira minha lista de filmes favoritos!",
+          text: 'Confira minha lista de filmes favoritos!',
           url: shareUrl,
-        });
+        })
       } else {
-        await navigator.clipboard.writeText(shareUrl);
-        alert(`Link copiado!\n${shareUrl}`);
+        await navigator.clipboard.writeText(shareUrl)
+        alert(`Link copiado!\n${shareUrl}`)
       }
 
-      handleCloseShare();
+      handleCloseShare()
     } catch (err) {
-      console.error("Erro ao criar lista compartilhável:", err);
-      alert("Não foi possível gerar a lista. Tente novamente.");
+      console.error('Erro ao criar lista compartilhável:', err)
+      alert('Não foi possível gerar a lista. Tente novamente.')
     } finally {
-      setSharing(false);
+      setSharing(false)
     }
-  };
+  }
 
-  const isNameValid = !!listName.trim() && !/\s/.test(listName);
+  const isNameValid = !!listName.trim() && !/\s/.test(listName)
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
       <Box
         sx={{
-          display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
           mb: 0.5,
           px: { xs: 2, md: 0 },
         }}
@@ -149,7 +149,7 @@ function FavoritesPage() {
           Favoritos
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          {movies?.length || 0} resultado{movies?.length > 1 ? "s" : ""}
+          {movies?.length || 0} resultado{movies?.length > 1 ? 's' : ''}
         </Typography>
       </Box>
 
@@ -157,8 +157,8 @@ function FavoritesPage() {
         sx={{
           mb: 2.5,
           px: { xs: 2, md: 0 },
-          display: "flex",
-          justifyContent: "flex-end",
+          display: 'flex',
+          justifyContent: 'flex-end',
         }}
       >
         <Button
@@ -186,7 +186,7 @@ function FavoritesPage() {
             value={listName}
             onChange={onNameChange}
             error={!!nameError}
-            helperText={nameError || "Ex.: favoritos_2025 ou filmes-top"}
+            helperText={nameError || 'Ex.: favoritos_2025 ou filmes-top'}
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -198,13 +198,13 @@ function FavoritesPage() {
             variant="contained"
             disabled={!isNameValid || sharing}
           >
-            {sharing ? "Gerando..." : "Compartilhar"}
+            {sharing ? 'Gerando...' : 'Compartilhar'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {loading ? (
-        <Box sx={{ display: "grid", placeItems: "center", minHeight: "50vh" }}>
+        <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '50vh' }}>
           <CircularProgress />
           <Typography color="text.secondary" sx={{ mt: 2 }}>
             Carregando favoritos...
@@ -223,14 +223,14 @@ function FavoritesPage() {
           ))}
         </Grid>
       ) : (
-        <Box sx={{ display: "grid", placeItems: "center", minHeight: "50vh" }}>
+        <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '50vh' }}>
           <Typography color="text.secondary">
             Nenhum filme favoritado ainda 😢
           </Typography>
         </Box>
       )}
     </Container>
-  );
+  )
 }
 
-export default FavoritesPage;
+export default FavoritesPage
