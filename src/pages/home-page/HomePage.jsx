@@ -7,7 +7,7 @@ import {
   Grid,
   Typography,
 } from "@mui/material"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp"
 import apiMovies from "../../api/api"
 import MovieCard from "../../components/movie-card/MovieCard"
@@ -26,31 +26,53 @@ function HomePage() {
   const [hasMore, setHasMore] = useState(true)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const query = params.get("q") || ""
 
+  const pendingFav = useRef(new Set())
   const loaderRef = useRef(null)
   const loadingRef = useRef(false)
 
-  const toggleFavorite = async (movie) => {
-    setFavorites((prev) => {
-      const next = new Set(prev)
-      if (next.has(movie.id)) {
-        next.delete(movie.id)
-        handleFavoriteApi(movie, false)
-      } else {
-        next.add(movie.id)
-        handleFavoriteApi(movie, true)
-      }
-      return next
-    })
-  }
+  const toggleFavorite = (movie) => {
+    const willFavorite = !favorites.has(movie.id);
 
-  const fetchMovies = async (pageNum = 1) => {
+    if (pendingFav.current.has(movie.id)) return;
+    pendingFav.current.add(movie.id);
+
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (willFavorite) next.add(movie.id);
+      else next.delete(movie.id);
+      return next;
+    });
+
+    handleFavoriteApi(movie, willFavorite)
+      .catch(() => {
+        setFavorites((prev) => {
+          const next = new Set(prev);
+          if (willFavorite) next.delete(movie.id);
+          else next.add(movie.id);
+          return next;
+        });
+      })
+      .finally(() => {
+        pendingFav.current.delete(movie.id);
+      });
+  };
+
+  // agora aceita (pageNum, q) e escolhe discover ou search
+  const fetchMovies = async (pageNum = 1, q = query) => {
     if (loadingRef.current) return
     loadingRef.current = true
     setLoading(true)
 
     try {
-      const response = await apiMovies.get(`discover/?page=${pageNum}&account_id=${import.meta.env.VITE_API_ACCOUNT_ID}`)
+      const base = q
+        ? `movies/search/?query=${encodeURIComponent(q)}`
+        : `discover/?`
+      const url = `${base}&page=${pageNum}&account_id=${import.meta.env.VITE_API_ACCOUNT_ID}&language=pt-BR`
+
+      const response = await apiMovies.get(url)
       const newMovies = response.data.results || []
 
       if (newMovies.length === 0) {
@@ -80,10 +102,24 @@ function HomePage() {
     }
   }
 
+  // quando a query muda, reseta lista/ids/favoritos e busca página 1
   useEffect(() => {
-    fetchMovies(1)
-  }, [])
+    setMovies([])
+    setMovieIds(new Set())
+    setFavorites(new Set())
+    setHasMore(true)
+    setPage(1)
+    fetchMovies(1, query)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query])
 
+  // paginação
+  useEffect(() => {
+    if (page > 1) fetchMovies(page, query)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, query])
+
+  // observer do loader
   useEffect(() => {
     if (loading || !hasMore) return
 
@@ -102,12 +138,9 @@ function HomePage() {
 
     return () => {
       if (currentLoader) observer.unobserve(currentLoader)
+      observer.disconnect()
     }
-  }, [loading, hasMore])
-
-  useEffect(() => {
-    if (page > 1) fetchMovies(page)
-  }, [page])
+  }, [loading, hasMore, query])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -127,10 +160,11 @@ function HomePage() {
     try {
       const payload = {
         account_id: import.meta.env.VITE_API_ACCOUNT_ID,
-        movie_id: movie.id,
         favorite: isFav,
         media_type: "movie",
-      }
+        movie_id: movie.id,
+      };
+
       await apiMovies.post("/favorites/", payload)
     } catch (error) {
       console.error("Erro ao atualizar favorito:", error)
@@ -138,13 +172,14 @@ function HomePage() {
   }
 
   const featured = useMemo(() => {
-    if (!movies?.length) return null
+    // esconde o destaque quando estiver em modo de busca
+    if (query || !movies?.length) return null
     return movies.reduce(
       (acc, cur) =>
         (cur.popularity ?? 0) > (acc?.popularity ?? -1) ? cur : acc,
       movies[0]
     )
-  }, [movies])
+  }, [movies, query])
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -242,7 +277,9 @@ function HomePage() {
           px: { xs: 2, md: 0 },
         }}
       >
-        <Typography variant="h6">Filmes</Typography>
+        <Typography variant="h6">
+          {query ? `Resultados para "${query}"` : "Filmes"}
+        </Typography>
         <Typography variant="body2" color="text.secondary">
           {movies?.length || 0} resultados
         </Typography>
@@ -268,7 +305,9 @@ function HomePage() {
             </Grid>
           ))
         ) : (
-          <Typography sx={{ p: 2 }}>Nenhum filme encontrado</Typography>
+          <Typography sx={{ p: 2 }}>
+            {query ? "Nenhum filme encontrado para sua busca." : "Nenhum filme encontrado"}
+          </Typography>
         )}
       </Grid>
 
