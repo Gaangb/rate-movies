@@ -1,14 +1,8 @@
 import { useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import {
-  Box,
-  Container,
-  Grid,
-  Typography,
-  Chip,
-  CircularProgress,
-} from '@mui/material'
+import { Box, Container, Grid, Typography, Chip, Button } from '@mui/material'
 import MovieCard from '../../components/movie-card/MovieCard'
+import LoadingOrEmptyState from '../../components/loading-or-empty-state/LoadingOrEmptyState'
 
 // MOCK
 const mockLists = {
@@ -59,53 +53,60 @@ function SharedListPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setTimeout(() => {
-      setList(mockLists[slug])
+    setLoading(true)
+    const timer = setTimeout(() => {
+      setList(mockLists[slug] || null)
       setLoading(false)
-    }, 500)
+    }, 600)
+
+    return () => clearTimeout(timer)
   }, [slug])
 
-  if (loading)
-    return (
-      <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress />
-      </Box>
-    )
-
-  if (!list)
-    return (
-      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
-        <Typography variant="h5" fontWeight={700} gutterBottom>
-          Lista não encontrada
-        </Typography>
-        <Typography color="text.secondary">
-          O link pode estar incorreto ou a lista foi removida.
-        </Typography>
-      </Container>
-    )
-
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={700}>
-          {list.title}
-        </Typography>
-
-        <Box sx={{ mt: 1.5, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {list.genres.map((g) => (
-            <Chip key={g} label={g} size="small" variant="outlined" />
-          ))}
+    <LoadingOrEmptyState
+      loading={loading}
+      hasItems={!!list}
+      loadingMessage="Carregando lista compartilhada..."
+      emptyMessage={
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h5" fontWeight={700} gutterBottom>
+            Lista não encontrada 😢
+          </Typography>
+          <Typography color="text.secondary" sx={{ mb: 2 }}>
+            O link pode estar incorreto ou a lista foi removida.
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => window.history.back()}
+          >
+            Voltar
+          </Button>
         </Box>
-      </Box>
+      }
+    >
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h4" fontWeight={700}>
+            {list?.title}
+          </Typography>
 
-      <Grid container spacing={2}>
-        {list.movies.map((movie) => (
-          <Grid key={movie.id} item xs={12} sm={6} md={4} lg={3} xl={2}>
-            <MovieCard movie={movie} showFavoriteButton={false} />
-          </Grid>
-        ))}
-      </Grid>
-    </Container>
+          <Box sx={{ mt: 1.5, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {list?.genres?.map((g) => (
+              <Chip key={g} label={g} size="small" variant="outlined" />
+            ))}
+          </Box>
+        </Box>
+
+        <Grid container spacing={2}>
+          {list?.movies?.map((movie) => (
+            <Grid key={movie.id} item xs={12} sm={6} md={4} lg={3} xl={2}>
+              <MovieCard movie={movie} showFavoriteButton={false} />
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+    </LoadingOrEmptyState>
   )
 }
 

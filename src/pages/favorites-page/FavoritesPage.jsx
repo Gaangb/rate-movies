@@ -15,6 +15,7 @@ import ShareRoundedIcon from '@mui/icons-material/ShareRounded'
 import { useEffect, useState } from 'react'
 import MovieCard from '../../components/movie-card/MovieCard'
 import apiMovies from '../../api/api'
+import LoadingOrEmptyState from '../../components/loading-or-empty-state/LoadingOrEmptyState'
 
 function FavoritesPage() {
   const [movies, setMovies] = useState([])
@@ -203,14 +204,12 @@ function FavoritesPage() {
         </DialogActions>
       </Dialog>
 
-      {loading ? (
-        <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '50vh' }}>
-          <CircularProgress />
-          <Typography color="text.secondary" sx={{ mt: 2 }}>
-            Carregando favoritos...
-          </Typography>
-        </Box>
-      ) : movies.length > 0 ? (
+      <LoadingOrEmptyState
+        loading={loading}
+        hasItems={movies.length > 0}
+        loadingMessage="Carregando favoritos..."
+        emptyMessage="Nenhum filme favoritado ainda 😢"
+      >
         <Grid container spacing={2} p={{ xs: 2, md: 0 }}>
           {movies.map((movie) => (
             <Grid key={movie.id} item xs={12} sm={6} md={4} lg={3} xl={2}>
@@ -222,13 +221,7 @@ function FavoritesPage() {
             </Grid>
           ))}
         </Grid>
-      ) : (
-        <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '50vh' }}>
-          <Typography color="text.secondary">
-            Nenhum filme favoritado ainda 😢
-          </Typography>
-        </Box>
-      )}
+      </LoadingOrEmptyState>
     </Container>
   )
 }

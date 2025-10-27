@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import apiMovies from '../../api/api'
 import MovieCard from '../../components/movie-card/MovieCard'
+import LoadingOrEmptyState from '../../components/loading-or-empty-state/LoadingOrEmptyState'
 
 const tmdbImg = (path, size = 'w1280') =>
   path ? `https://image.tmdb.org/t/p/${size}${path}` : null
@@ -53,7 +54,6 @@ function HomePage() {
       })
   }
 
-  // agora aceita (pageNum, q) e escolhe discover ou search
   const fetchMovies = async (pageNum = 1, q = query) => {
     if (loadingRef.current) return
     loadingRef.current = true
@@ -92,13 +92,13 @@ function HomePage() {
       }
     } catch (error) {
       console.error('Erro ao buscar filmes:', error)
+      setHasMore(false)
     } finally {
       loadingRef.current = false
       setLoading(false)
     }
   }
 
-  // quando a query muda, reseta lista/ids/favoritos e busca página 1
   useEffect(() => {
     setMovies([])
     setMovieIds(new Set())
@@ -115,7 +115,6 @@ function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, query])
 
-  // observer do loader
   useEffect(() => {
     if (loading || !hasMore) return
 
@@ -168,7 +167,6 @@ function HomePage() {
   }
 
   const featured = useMemo(() => {
-    // esconde o destaque quando estiver em modo de busca
     if (query || !movies?.length) return null
     return movies.reduce(
       (acc, cur) =>
@@ -281,9 +279,18 @@ function HomePage() {
         </Typography>
       </Box>
 
-      <Grid container spacing={2} p={{ xs: 2, md: 0 }}>
-        {movies.length ? (
-          movies.map((movie, index) => (
+      <LoadingOrEmptyState
+        loading={loading}
+        hasItems={movies.length > 0}
+        emptyMessage={
+          query
+            ? 'Nenhum filme encontrado para sua busca.'
+            : 'Nenhum filme encontrado.'
+        }
+        loadingMessage="Carregando filmes..."
+      >
+        <Grid container spacing={2} p={{ xs: 2, md: 0 }}>
+          {movies.map((movie, index) => (
             <Grid
               key={`${movie.id}-${index}`}
               item
@@ -299,15 +306,9 @@ function HomePage() {
                 onToggleFavorite={toggleFavorite}
               />
             </Grid>
-          ))
-        ) : (
-          <Typography sx={{ p: 2 }}>
-            {query
-              ? 'Nenhum filme encontrado para sua busca.'
-              : 'Nenhum filme encontrado'}
-          </Typography>
-        )}
-      </Grid>
+          ))}
+        </Grid>
+      </LoadingOrEmptyState>
 
       {hasMore && !loading && (
         <div
@@ -318,15 +319,11 @@ function HomePage() {
         </div>
       )}
 
-      {loading && (
+      {!hasMore && movies.length > 0 && (
         <Typography sx={{ textAlign: 'center', py: 2 }} color="text.secondary">
-          Carregando filmes...
-        </Typography>
-      )}
-
-      {!hasMore && (
-        <Typography sx={{ textAlign: 'center', py: 2 }} color="text.secondary">
-          Você chegou ao fim da lista 🍿
+          {query
+            ? 'Fim dos resultados da busca 🔍'
+            : 'Você chegou ao fim da lista 🍿'}
         </Typography>
       )}
 
