@@ -330,9 +330,9 @@ function MovieDetailsPage() {
             </Typography>
 
             {movie?.providers &&
-              (movie.providers.flatrate?.length ||
-                movie.providers.rent?.length ||
-                movie.providers.buy?.length) ? (
+            (movie.providers.flatrate?.length ||
+              movie.providers.rent?.length ||
+              movie.providers.buy?.length) ? (
               <Grid container spacing={2} sx={{ maxWidth: 820 }}>
                 {movie.providers.flatrate?.map((prov) => (
                   <Grid key={prov.provider_id} item xs={12} sm={6} md={4}>

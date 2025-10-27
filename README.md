@@ -92,7 +92,7 @@ src/
 
 ### 1) Clone
 ```bash
-git clone https://github.com/<your-username>/rate-movies-web.git
+git clone https://github.com/angelogabrieldev/rate-movies-web.git
 cd rate-movies-web
 ```
 
