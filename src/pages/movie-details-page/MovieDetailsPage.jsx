@@ -28,9 +28,10 @@ function MovieDetailsPage() {
   const tmdbImg = (path, size = 'w1280') =>
     path ? `https://image.tmdb.org/t/p/${size}${path}` : noPoster
 
+  const { id } = useParams()
+  const { enqueueSnackbar } = useSnackbar()
   const [loading, setLoading] = useState(false)
   const [movie, setMovie] = useState(null)
-  const { enqueueSnackbar } = useSnackbar()
 
   function ScorePill({ value }) {
     return (
@@ -70,7 +71,6 @@ function MovieDetailsPage() {
       </Box>
     )
   }
-  const { id } = useParams()
 
   useEffect(() => {
     const fetchMovie = async () => {
