@@ -13,9 +13,13 @@ import {
 import ShareRoundedIcon from '@mui/icons-material/ShareRounded'
 import { useEffect, useState } from 'react'
 import MovieCard from '../../components/movie-card/MovieCard'
-import apiMovies from '../../api/api'
 import LoadingOrEmptyState from '../../components/loading-or-empty-state/LoadingOrEmptyState'
 import { useSnackbar } from 'notistack'
+import {
+  fetchFavoritesService,
+  toggleFavoriteService,
+  shareFavoritesService,
+} from '../../services/moviesServices'
 
 function FavoritesPage() {
   const [movies, setMovies] = useState([])
@@ -33,33 +37,23 @@ function FavoritesPage() {
     const fetchFavorites = async () => {
       try {
         setLoading(true)
-        const { data } = await apiMovies.get('/favorites/', {
-          params: { account_id: accountId },
-        })
-        const results = data?.results ?? []
+        const results = await fetchFavoritesService(accountId)
         setMovies(results)
         setFavorites(new Set(results.map((m) => m.id)))
       } catch (err) {
-        enqueueSnackbar(`Erro ao buscar filmes ${err}`, {
-          variant: 'error',
-        })
+        enqueueSnackbar(err.message, { variant: 'error' })
       } finally {
         setLoading(false)
       }
     }
     fetchFavorites()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountId])
 
   const toggleFavorite = async (movie) => {
     try {
       const isFav = favorites.has(movie.id)
-
-      await apiMovies.post('/favorites/', {
-        account_id: accountId,
-        movie_id: movie.id,
-        favorite: !isFav,
-        media_type: 'movie',
-      })
+      await toggleFavoriteService(movie, !isFav, accountId)
 
       setFavorites((prev) => {
         const next = new Set(prev)
@@ -68,11 +62,11 @@ function FavoritesPage() {
         return next
       })
 
-      if (isFav) setMovies((prev) => prev.filter((m) => m.id !== movie.id))
+      if (isFav) {
+        setMovies((prev) => prev.filter((m) => m.id !== movie.id))
+      }
     } catch (err) {
-      enqueueSnackbar(`Erro ao atualizar favorito ${err}`, {
-        variant: 'error',
-      })
+      enqueueSnackbar(err.message, { variant: 'error' })
     }
   }
 
@@ -98,16 +92,10 @@ function FavoritesPage() {
   const handleShare = async () => {
     if (nameError || !listName.trim()) return
 
-    const sanitized = listName.trim().replace(/\s+/g, '-')
-
     try {
       setSharing(true)
-
-      await apiMovies.post('/share-favorites/', {
-        account_id: Number(accountId),
-        list_name: sanitized,
-      })
-
+      const sanitized = listName.trim().replace(/\s+/g, '-')
+      await shareFavoritesService(accountId, sanitized)
       const sharePath = `/list/${sanitized}`
       const shareUrl = `${window.location.origin}${sharePath}`
 
@@ -116,15 +104,9 @@ function FavoritesPage() {
       enqueueSnackbar('Link copiado para a área de transferência!', {
         variant: 'success',
       })
-
       handleCloseShare()
     } catch (err) {
-      enqueueSnackbar(
-        `Não foi possível gerar a lista. Tente novamente. ${err}`,
-        {
-          variant: 'error',
-        },
-      )
+      enqueueSnackbar(err.message, { variant: 'error' })
     } finally {
       setSharing(false)
     }

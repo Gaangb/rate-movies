@@ -2,10 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Button, Chip, Container, Grid, Typography } from '@mui/material'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
-import apiMovies from '../../api/api'
 import MovieCard from '../../components/movie-card/MovieCard'
 import LoadingOrEmptyState from '../../components/loading-or-empty-state/LoadingOrEmptyState'
 import { useSnackbar } from 'notistack'
+import {
+  fetchMoviesService,
+  toggleFavoriteService,
+} from '../../services/moviesServices'
 
 const tmdbImg = (path, size = 'w1280') =>
   path ? `https://image.tmdb.org/t/p/${size}${path}` : null
@@ -17,6 +20,7 @@ function HomePage() {
   const [movieIds, setMovieIds] = useState(new Set())
   const [favorites, setFavorites] = useState(() => new Set())
   const [page, setPage] = useState(1)
+  const [initialLoading, setInitialLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [showScrollTop, setShowScrollTop] = useState(false)
@@ -27,53 +31,46 @@ function HomePage() {
   const pendingFav = useRef(new Set())
   const loaderRef = useRef(null)
   const loadingRef = useRef(false)
-
   const { enqueueSnackbar } = useSnackbar()
 
-  const toggleFavorite = (movie) => {
+  const accountId = import.meta.env.VITE_API_ACCOUNT_ID
+
+  const toggleFavorite = async (movie) => {
     const willFavorite = !favorites.has(movie.id)
-
     if (pendingFav.current.has(movie.id)) return
-    pendingFav.current.add(movie.id)
 
+    pendingFav.current.add(movie.id)
     setFavorites((prev) => {
       const next = new Set(prev)
-      if (willFavorite) next.add(movie.id)
-      else next.delete(movie.id)
+      willFavorite ? next.add(movie.id) : next.delete(movie.id)
       return next
     })
 
-    handleFavoriteApi(movie, willFavorite)
-      .catch(() => {
-        setFavorites((prev) => {
-          const next = new Set(prev)
-          if (willFavorite) next.delete(movie.id)
-          else next.add(movie.id)
-          return next
-        })
+    try {
+      await toggleFavoriteService(movie, willFavorite, accountId)
+    } catch (err) {
+      enqueueSnackbar(err.message, { variant: 'error' })
+      setFavorites((prev) => {
+        const next = new Set(prev)
+        willFavorite ? next.delete(movie.id) : next.add(movie.id)
+        return next
       })
-      .finally(() => {
-        pendingFav.current.delete(movie.id)
-      })
+    } finally {
+      pendingFav.current.delete(movie.id)
+    }
   }
 
   const fetchMovies = async (pageNum = 1, q = query) => {
     if (loadingRef.current) return
     loadingRef.current = true
-    setLoading(true)
+
+    if (pageNum === 1) setInitialLoading(true)
+    else setLoading(true)
 
     try {
-      const base = q
-        ? `movies/search/?query=${encodeURIComponent(q)}`
-        : `discover/?`
-      const url = `${base}&page=${pageNum}&account_id=${import.meta.env.VITE_API_ACCOUNT_ID}&language=pt-BR`
-
-      const response = await apiMovies.get(url)
-      const newMovies = response.data.results || []
-
-      if (newMovies.length === 0) {
-        setHasMore(false)
-      } else {
+      const newMovies = await fetchMoviesService(pageNum, q, accountId)
+      if (newMovies.length === 0) setHasMore(false)
+      else {
         setMovies((prev) => {
           const filtered = newMovies.filter((m) => !movieIds.has(m.id))
           const updatedIds = new Set([
@@ -89,17 +86,15 @@ function HomePage() {
             })
             return updatedFavs
           })
-
           return [...prev, ...filtered]
         })
       }
     } catch (err) {
-      enqueueSnackbar(`Erro ao buscar filmes ${err}`, {
-        variant: 'error',
-      })
+      enqueueSnackbar(err.message, { variant: 'error' })
       setHasMore(false)
     } finally {
       loadingRef.current = false
+      setInitialLoading(pageNum === 1 ? false : initialLoading)
       setLoading(false)
     }
   }
@@ -114,7 +109,6 @@ function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query])
 
-  // paginação
   useEffect(() => {
     if (page > 1) fetchMovies(page, query)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,11 +120,16 @@ function HomePage() {
     const observer = new IntersectionObserver(
       (entries) => {
         const first = entries[0]
-        if (first.isIntersecting && !loadingRef.current) {
+        if (
+          first.isIntersecting &&
+          !loadingRef.current &&
+          hasMore &&
+          !initialLoading
+        ) {
           setPage((prev) => prev + 1)
         }
       },
-      { threshold: 1.0 },
+      { rootMargin: '200px', threshold: 0.1 },
     )
 
     const currentLoader = loaderRef.current
@@ -140,38 +139,18 @@ function HomePage() {
       if (currentLoader) observer.unobserve(currentLoader)
       observer.disconnect()
     }
-  }, [loading, hasMore, query])
+  }, [loading, hasMore, query, initialLoading])
 
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY || document.documentElement.scrollTop
       setShowScrollTop(scrollY > 600)
     }
-
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  const handleFavoriteApi = async (movie, isFav) => {
-    try {
-      const payload = {
-        account_id: import.meta.env.VITE_API_ACCOUNT_ID,
-        favorite: isFav,
-        media_type: 'movie',
-        movie_id: movie.id,
-      }
-
-      await apiMovies.post('/favorites/', payload)
-    } catch (err) {
-      enqueueSnackbar(`Erro ao atualizar favorito ${err}`, {
-        variant: 'error',
-      })
-    }
-  }
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
   const featured = useMemo(() => {
     if (query || !movies?.length) return null
@@ -287,7 +266,7 @@ function HomePage() {
       </Box>
 
       <LoadingOrEmptyState
-        loading={loading}
+        loading={initialLoading}
         hasItems={movies.length > 0}
         emptyMessage={
           query
@@ -317,12 +296,18 @@ function HomePage() {
         </Grid>
       </LoadingOrEmptyState>
 
-      {hasMore && !loading && (
+      {hasMore && (
         <div
           ref={loaderRef}
           style={{ height: '60px', margin: '40px 0', textAlign: 'center' }}
         >
-          <Typography color="text.secondary">Carregando mais...</Typography>
+          {initialLoading ? null : loading ? (
+            <Typography color="text.secondary">Carregando mais...</Typography>
+          ) : (
+            <Typography color="text.secondary">
+              Desça para carregar mais...
+            </Typography>
+          )}
         </div>
       )}
 

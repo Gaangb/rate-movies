@@ -1,4 +1,3 @@
-// src/pages/MovieDetailsPage.tsx
 import {
   Avatar,
   Box,

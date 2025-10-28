@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react'
 import { Box, Container, Grid, Typography, Chip, Button } from '@mui/material'
 import MovieCard from '../../components/movie-card/MovieCard'
 import LoadingOrEmptyState from '../../components/loading-or-empty-state/LoadingOrEmptyState'
-import apiMovies from '../../api/api'
 import { useSnackbar } from 'notistack'
+import { fetchSharedListService } from '../../services/moviesServices'
 
 function SharedListPage() {
   const { slug } = useParams()
@@ -12,28 +12,25 @@ function SharedListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const { enqueueSnackbar } = useSnackbar()
+
   useEffect(() => {
     const fetchSharedList = async () => {
+      if (!slug) return
+      setLoading(true)
+      setError(false)
       try {
-        setLoading(true)
-        setError(false)
-
-        const { data } = await apiMovies.get('/get-shared-favorites/', {
-          params: { list_name: slug },
-        })
-
-        setMovies(data || [])
+        const results = await fetchSharedListService(slug)
+        setMovies(results)
       } catch (err) {
-        enqueueSnackbar(`Erro ao buscar lista compartilhada ${err}`, {
-          variant: 'error',
-        })
+        enqueueSnackbar(err.message, { variant: 'error' })
         setError(true)
       } finally {
         setLoading(false)
       }
     }
 
-    if (slug) fetchSharedList()
+    fetchSharedList()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug])
 
   return (
@@ -51,13 +48,6 @@ function SharedListPage() {
               ? 'Ocorreu um problema ao buscar os filmes. Tente novamente mais tarde.'
               : 'O link pode estar incorreto ou a lista foi removida.'}
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => window.history.back()}
-          >
-            Voltar
-          </Button>
         </Box>
       }
     >
